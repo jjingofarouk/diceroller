@@ -264,15 +264,16 @@
                             <th>Probability</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr><td>0</td><td>0</td><td>40.13%</td></tr>
-                        <tr><td>1</td><td>25</td><td>40.13%</td></tr>
-                        <tr><td>2</td><td>75</td><td>15.05%</td></tr>
-                        <tr><td>3</td><td>250</td><td>3.76%</td></tr>
-                        <tr><td>4</td><td>1000</td><td>0.47%</td></tr>
-                        <tr><td>5</td><td>5000</td><td>0.02%</td></tr>
-                    </tbody>
+<tbody>
+    <tr><td>0</td><td>0</td><td>40.13%</td></tr>
+    <tr><td>1</td><td>50*</td><td>40.13%</td></tr>
+    <tr><td>2</td><td>300</td><td>15.05%</td></tr>
+    <tr><td>3</td><td>900</td><td>3.76%</td></tr>
+    <tr><td>4</td><td>3500</td><td>0.47%</td></tr>
+    <tr><td>5</td><td>10000</td><td>0.02%</td></tr>
+</tbody>
                 </table>
+             <p><small>* Consolation prize, not counted as a win</small></p>   
             </div>
 
             <div class="results-table">
@@ -300,205 +301,210 @@
         </div>
     </div>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            let points = 5000;
-            let selectedDice = [];
-            let currentDice = [];
-            let gamesPlayed = 0;
-            let gamesWon = 0;
-            const COST_TO_PLAY = 100;
-            const NUM_DICE = 5;
-            const REROLLS_ALLOWED = 2;
-            let rerollsRemaining = REROLLS_ALLOWED;
-            const statistics = Array(6).fill(0);
+  document.addEventListener('DOMContentLoaded', () => {
+    // Initial game state
+    let points = 5000;
+    let selectedDice = [];
+    let currentDice = [];
+    let gamesPlayed = 0;
+    let gamesWon = 0;
+    const COST_TO_PLAY = 100;
+    const NUM_DICE = 5;
+    const REROLLS_ALLOWED = 2;
+    let rerollsRemaining = REROLLS_ALLOWED;
+    const statistics = Array(6).fill(0);
 
-// Only the modified portions of the code are shown
-const prizes = {
-    0: 0,          // No change needed for 0 fives
-    1: 50,         // Increased from 25
-    2: 150,        // Increased from 75 
-    3: 500,        // Increased from 250
-    4: 2000,       // Increased from 1000
-    5: 10000       // Increased from 5000
-};
+    // Updated prize structure for EV = 0
+    const prizes = {
+        0: 0,
+        1: 50,    // Consolation prize
+        2: 300,   // First winning tier
+        3: 900,
+        4: 3500,
+        5: 10000
+    };
 
-            const rollButton = document.getElementById('rollButton');
-            const rerollButton = document.getElementById('rerollButton');
-            const playAgainButton = document.getElementById('playAgainButton');
-            const pointsDisplay = document.getElementById('points');
-            const diceContainer = document.getElementById('diceContainer');
-            const resultDisplay = document.getElementById('result');
-            const instructions = document.getElementById('instructions');
-            const progressBar = document.getElementById('progressBar');
-            const gamesPlayedDisplay = document.getElementById('gamesPlayed');
-            const winRateDisplay = document.getElementById('winRate');
+    const rollButton = document.getElementById('rollButton');
+    const rerollButton = document.getElementById('rerollButton');
+    const playAgainButton = document.getElementById('playAgainButton');
+    const pointsDisplay = document.getElementById('points');
+    const diceContainer = document.getElementById('diceContainer');
+    const resultDisplay = document.getElementById('result');
+    const instructions = document.getElementById('instructions');
+    const progressBar = document.getElementById('progressBar');
+    const gamesPlayedDisplay = document.getElementById('gamesPlayed');
+    const winRateDisplay = document.getElementById('winRate');
 
-            function updateGameStats() {
-                gamesPlayedDisplay.textContent = gamesPlayed;
-                winRateDisplay.textContent = gamesPlayed > 0 
-                    ? `${((gamesWon / gamesPlayed) * 100).toFixed(1)}%`
-                    : '0%';
-            }
-
-            function updateProgress() {
-                const progress = ((REROLLS_ALLOWED - rerollsRemaining) / REROLLS_ALLOWED) * 100;
-                progressBar.style.width = `${progress}%`;
-            }
-
-            function updatePoints(newPoints) {
-                points = newPoints;
-                pointsDisplay.textContent = points;
-                rollButton.disabled = points < COST_TO_PLAY;
-                if (points < COST_TO_PLAY) {
-                    instructions.textContent = "Game Over! You're out of chips!";
-                    playAgainButton.style.display = 'inline-block';
-                }
-            }
-
-            function rollDie() {
-                return Math.floor(Math.random() * 6) + 1;
-            }
-
-            function createDiceElements(isInitialRoll = true) {
-                if (isInitialRoll) {
-                    currentDice = Array(NUM_DICE).fill(0).map(() => rollDie());
-                    selectedDice = Array(NUM_DICE).fill(false);
-                    rerollsRemaining = REROLLS_ALLOWED;
-                    updateProgress();
-                } else {
-                    selectedDice.forEach((isSelected, index) => {
-                        if (isSelected) {
-                            currentDice[index] = rollDie();
-                        }
-                    });
-                }
-                
-                diceContainer.innerHTML = '';
-                currentDice.forEach((value, index) => {
-                    const die = document.createElement('div');
-                    die.className = `dice${selectedDice[index] ? ' selected' : ''}${value === 5 ? ' five' : ''}`;
-                    die.dataset.index = index;
-                    
-                    if (isInitialRoll || selectedDice[index]) {
-                        die.classList.add('rolling');
-                        setTimeout(() => die.classList.remove('rolling'), 500);
-                    }
-
-                    die.textContent = value;
-                    
-                    die.addEventListener('click', () => {
-                        if (rerollsRemaining > 0 && value !== 5) {
-                            selectedDice[index] = !selectedDice[index];
-                            die.classList.toggle('selected');
-                        }
-                    });
-                    
-                    diceContainer.appendChild(die);
-                });
-                
-                rerollButton.textContent = `🔄 Reroll Selected (${rerollsRemaining})`;
-                rerollButton.style.display = rerollsRemaining > 0 ? 'inline-block' : 'none';
-            }
-
-            function countFives() {
-                return currentDice.filter(value => value === 5).length;
-            }
-
-            function updateStatistics(numFives) {
-                statistics[numFives]++;
-                const tbody = document.querySelector('#scoreTable tbody');
-                tbody.innerHTML = '';
-                
-                let totalGames = statistics.reduce((sum, count) => sum + count, 0);
-                
-                statistics.forEach((count, index) => {
-                    const row = tbody.insertRow();
-                    row.insertCell().textContent = index;
-                    row.insertCell().textContent = count;
-                    row.insertCell().textContent = 
-                        totalGames > 0 ? `${((count / totalGames) * 100).toFixed(1)}%` : '0%';
-                });
-            }
-
-            function checkWin(numFives) {
-                const prize = prizes[numFives];
-                if (prize > 0) {
-                    gamesWon++;
-                    resultDisplay.innerHTML = `
-                        <span style="color: #ffd700; font-size: 1.4em;">
-                            🎉 Congratulations! You got ${numFives} fives and won ${prize} chips! 🎉
-                        </span>
-                    `;
-                } else {
-                    resultDisplay.innerHTML = `
-                        <span style="color: #fff;">
-                            You got ${numFives} fives. Better luck next time!
-                        </span>
-                    `;
-                }
-                updateGameStats();
-                return prize;
-            }
-
-function startNewGame() {
-    if (points >= COST_TO_PLAY) {
-        gamesPlayed++;
-        updatePoints(points - COST_TO_PLAY);
-        createDiceElements(true);
-        rerollButton.style.display = 'inline-block';
-        // Remove this line that was disabling the roll button
-        // rollButton.disabled = true;
-        resultDisplay.textContent = '';
-        instructions.textContent = "You can reroll selected dice or start a new roll!";
-        playAgainButton.style.display = 'none';
+    // Update game statistics - modified to only count 2+ fives as wins
+    function updateGameStats() {
+        gamesPlayedDisplay.textContent = gamesPlayed;
+        winRateDisplay.textContent = gamesPlayed > 0 
+            ? `${((gamesWon / gamesPlayed) * 100).toFixed(1)}%`
+            : '0%';
     }
-}
 
-function handleReroll() {
-    if (rerollsRemaining > 0) {
-        createDiceElements(false);
-        rerollsRemaining--;
-        updateProgress();
-        
-        if (rerollsRemaining === 0) {
-            const numFives = countFives();
-            const prize = checkWin(numFives);
-            updateStatistics(numFives);
-            updatePoints(points + prize);
-            
-            // Remove disabling of roll button here too
-            // rollButton.disabled = false;
-            rerollButton.style.display = 'none';
-            instructions.textContent = "Roll again to try your luck!";
+    function updateProgress() {
+        const progress = ((REROLLS_ALLOWED - rerollsRemaining) / REROLLS_ALLOWED) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    function updatePoints(newPoints) {
+        points = newPoints;
+        pointsDisplay.textContent = points;
+        rollButton.disabled = points < COST_TO_PLAY;
+        if (points < COST_TO_PLAY) {
+            instructions.textContent = "Game Over! You're out of chips!";
+            playAgainButton.style.display = 'inline-block';
         }
     }
-}
 
-            function resetGame() {
-                points = 5000;
-                gamesPlayed = 0;
-                gamesWon = 0;
-                statistics.fill(0);
-                updatePoints(points);
-                updateGameStats();
-                resultDisplay.textContent = '';
-                diceContainer.innerHTML = '';
-                rollButton.disabled = false;
-                rerollButton.style.display = 'none';
-                playAgainButton.style.display = 'none';
-                progressBar.style.width = '0%';
-                instructions.textContent = "Welcome back! Click 'Roll Dice' to test your luck.";
-                updateStatistics(0);
+    function rollDie() {
+        return Math.floor(Math.random() * 6) + 1;
+    }
+
+    function createDiceElements(isInitialRoll = true) {
+        if (isInitialRoll) {
+            currentDice = Array(NUM_DICE).fill(0).map(() => rollDie());
+            selectedDice = Array(NUM_DICE).fill(false);
+            rerollsRemaining = REROLLS_ALLOWED;
+            updateProgress();
+        } else {
+            selectedDice.forEach((isSelected, index) => {
+                if (isSelected) {
+                    currentDice[index] = rollDie();
+                }
+            });
+        }
+        
+        diceContainer.innerHTML = '';
+        currentDice.forEach((value, index) => {
+            const die = document.createElement('div');
+            die.className = `dice${selectedDice[index] ? ' selected' : ''}${value === 5 ? ' five' : ''}`;
+            die.dataset.index = index;
+            
+            if (isInitialRoll || selectedDice[index]) {
+                die.classList.add('rolling');
+                setTimeout(() => die.classList.remove('rolling'), 500);
             }
 
-            // Event Listeners
-            rollButton.addEventListener('click', startNewGame);
-            rerollButton.addEventListener('click', handleReroll);
-            playAgainButton.addEventListener('click', resetGame);
-
-            // Initialize statistics table
-            updateStatistics(0);
+            die.textContent = value;
+            
+            die.addEventListener('click', () => {
+                if (rerollsRemaining > 0 && value !== 5) {
+                    selectedDice[index] = !selectedDice[index];
+                    die.classList.toggle('selected');
+                }
+            });
+            
+            diceContainer.appendChild(die);
         });
+        
+        rerollButton.textContent = `🔄 Reroll Selected (${rerollsRemaining})`;
+        rerollButton.style.display = rerollsRemaining > 0 ? 'inline-block' : 'none';
+    }
+
+    function countFives() {
+        return currentDice.filter(value => value === 5).length;
+    }
+
+    // Modified to reflect actual outcomes in statistics
+    function updateStatistics(numFives) {
+        statistics[numFives]++;
+        const tbody = document.querySelector('#scoreTable tbody');
+        tbody.innerHTML = '';
+        
+        let totalGames = statistics.reduce((sum, count) => sum + count, 0);
+        
+        statistics.forEach((count, index) => {
+            const row = tbody.insertRow();
+            row.insertCell().textContent = index;
+            row.insertCell().textContent = count;
+            row.insertCell().textContent = 
+                totalGames > 0 ? `${((count / totalGames) * 100).toFixed(1)}%` : '0%';
+        });
+    }
+
+    // Modified to handle new win conditions and messaging
+    function checkWin(numFives) {
+        const prize = prizes[numFives];
+        if (numFives >= 2) {
+            gamesWon++;
+            resultDisplay.innerHTML = `
+                <span style="color: #ffd700; font-size: 1.4em;">
+                    🎉 Congratulations! You got ${numFives} fives and won ${prize} chips! 🎉
+                </span>
+            `;
+        } else if (numFives === 1) {
+            resultDisplay.innerHTML = `
+                <span style="color: #fff;">
+                    You got 1 five. Here's ${prize} chips as consolation!
+                </span>
+            `;
+        } else {
+            resultDisplay.innerHTML = `
+                <span style="color: #fff;">
+                    No fives this time. Better luck next time!
+                </span>
+            `;
+        }
+        updateGameStats();
+        return prize;
+    }
+
+    function startNewGame() {
+        if (points >= COST_TO_PLAY) {
+            gamesPlayed++;
+            updatePoints(points - COST_TO_PLAY);
+            createDiceElements(true);
+            rerollButton.style.display = 'inline-block';
+            resultDisplay.textContent = '';
+            instructions.textContent = "You can reroll selected dice or start a new roll!";
+            playAgainButton.style.display = 'none';
+        }
+    }
+
+    function handleReroll() {
+        if (rerollsRemaining > 0) {
+            createDiceElements(false);
+            rerollsRemaining--;
+            updateProgress();
+            
+            if (rerollsRemaining === 0) {
+                const numFives = countFives();
+                const prize = checkWin(numFives);
+                updateStatistics(numFives);
+                updatePoints(points + prize);
+                rerollButton.style.display = 'none';
+                instructions.textContent = "Roll again to try your luck!";
+            }
+        }
+    }
+
+    function resetGame() {
+        points = 5000;
+        gamesPlayed = 0;
+        gamesWon = 0;
+        statistics.fill(0);
+        updatePoints(points);
+        updateGameStats();
+        resultDisplay.textContent = '';
+        diceContainer.innerHTML = '';
+        rollButton.disabled = false;
+        rerollButton.style.display = 'none';
+        playAgainButton.style.display = 'none';
+        progressBar.style.width = '0%';
+        instructions.textContent = "Welcome! Each game costs 100 chips. Get 2 or more fives to win!";
+        updateStatistics(0);
+    }
+
+    // Event Listeners
+    rollButton.addEventListener('click', startNewGame);
+    rerollButton.addEventListener('click', handleReroll);
+    playAgainButton.addEventListener('click', resetGame);
+
+    // Initialize statistics table
+    updateStatistics(0);
+});
     </script>
 </body>
 </html>
